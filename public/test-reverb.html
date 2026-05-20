@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test with Reverb</h1>
+    <div id="status">Testing...</div>
+    <div id="log"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+        
+        function addLog(msg) {
+            logDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${msg}</div>`;
+        }
+        
+        // Correct WebSocket URL for Reverb
+        const appId = '542195';
+        const wsUrl = `ws://127.0.0.1:8080/app/${appId}`;
+        
+        addLog(`Attempting WebSocket connection to ${wsUrl}`);
+        
+        const ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+            statusDiv.innerHTML = '✅ Connected to Reverb!';
+            statusDiv.style.color = 'green';
+            addLog('✅ WebSocket connection successful!');
+            
+            // Send a ping message
+            ws.send(JSON.stringify({ type: 'ping' }));
+        };
+        
+        ws.onmessage = (event) => {
+            addLog(`Received: ${event.data}`);
+        };
+        
+        ws.onerror = (error) => {
+            statusDiv.innerHTML = '❌ Connection failed!';
+            statusDiv.style.color = 'red';
+            addLog(`❌ WebSocket error: ${error.message || 'Unknown error'}`);
+        };
+        
+        ws.onclose = (event) => {
+            addLog(`Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+        };
+        
+        setTimeout(() => {
+            if (ws.readyState !== WebSocket.OPEN) {
+                addLog('❌ Timeout - Connection failed after 5 seconds');
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
