@@ -6,6 +6,8 @@
     <div class="space-y-6">
         <h1 class="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
 
+        
+
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white rounded-lg p-6 shadow-sm">

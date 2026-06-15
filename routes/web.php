@@ -109,10 +109,12 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/settings/avatar', [SettingsController::class, 'removeAvatar'])->name('settings.remove-avatar');
 
     // ========== AI ROUTES ==========
-    Route::prefix('ai')->name('ai.')->group(function () {
+    Route::prefix('ai')->middleware(['auth'])->name('ai.')->group(function () {
+        Route::get('/insights', [AIController::class, 'getInsights'])->name('insights');
         Route::post('/meetings/{meeting}/process', [AIController::class, 'processMeeting'])->name('process');
         Route::post('/meetings/{meeting}/process-text', [AIController::class, 'processText'])->name('process-text');
-        Route::get('/insights', [AIController::class, 'getInsights'])->name('insights');
+        Route::get('/meetings/{meeting}/insights', [AIController::class, 'showMeetingInsights'])->name('meetings.insights');
+        Route::post('/chat', [AIController::class, 'chatAssistant'])->name('chat');
     });
 
     // ========== ADMIN ROUTES ==========
@@ -147,5 +149,3 @@ Route::get('/test-session-check', function () {
 Route::get('/pulse', function () {
     return view('pulse::dashboard');
 })->middleware(['auth', 'can:viewPulse']);
-
-
