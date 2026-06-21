@@ -149,3 +149,14 @@ Route::get('/test-session-check', function () {
 Route::get('/pulse', function () {
     return view('pulse::dashboard');
 })->middleware(['auth', 'can:viewPulse']);
+
+
+// Debug route to check if meetings.create route exists
+Route::get('/debug-meetings-route', function () {
+    try {
+        $url = route('meetings.create');
+        return "Route exists! URL: " . $url;
+    } catch (\Exception $e) {
+        return "Route does NOT exist. Error: " . $e->getMessage();
+    }
+})->middleware(['auth']);

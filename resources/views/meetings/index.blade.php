@@ -9,13 +9,24 @@
                 <h1 class="text-3xl font-bold text-gray-800">Meetings</h1>
                 <p class="text-gray-500 mt-1">Manage and join your meetings</p>
             </div>
+
+            {{-- DEBUG: Show user info --}}
             @auth
-                @if (auth()->user()->role === 'admin')
-                    <a href="{{ route('meetings.create') }}"
-                        class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center">
-                        <i class="fas fa-plus mr-2"></i>Create Meeting
-                    </a>
-                @endif
+                <div class="text-xs text-gray-400 hidden md:block">
+                    Logged in as: {{ auth()->user()->name }} (Role: {{ auth()->user()->role }})
+                </div>
+            @endauth
+
+            @auth
+                <a href="{{ route('meetings.create') }}"
+                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center shadow-md hover:shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>Create Meeting
+                </a>
+            @else
+                <a href="{{ route('login') }}"
+                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login to Create
+                </a>
             @endauth
         </div>
 
@@ -96,14 +107,15 @@
                                 <a href="{{ route('meetings.edit', $meeting) }}"
                                     class="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300"
                                     title="Edit Meeting">
-                                    <i class="fas fa-cog"></i>
-                                </a>
-                                <a href="{{ route('meetings.show', $meeting) }}"
-                                    class="border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition"
-                                    title="View Details">
-                                    <i class="fas fa-info-circle"></i>
+                                    <i class="fas fa-edit"></i>
                                 </a>
                             @endif
+
+                            <a href="{{ route('meetings.show', $meeting) }}"
+                                class="border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition"
+                                title="View Details">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -111,13 +123,18 @@
                 <div class="col-span-3 bg-white rounded-xl shadow-sm p-12 text-center">
                     <i class="fas fa-video-slash text-6xl text-gray-300 mb-4"></i>
                     <h3 class="text-xl font-semibold text-gray-700 mb-2">No meetings yet</h3>
-                   
-                    @if (auth()->user()->role === 'admin')
+                    <p class="text-gray-500 mb-4">Get started by creating your first meeting</p>
+                    @auth
                         <a href="{{ route('meetings.create') }}"
-                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 inline-block">
-                            Create Meeting
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 inline-block transition shadow-md hover:shadow-lg">
+                            <i class="fas fa-plus mr-2"></i>Create Your First Meeting
                         </a>
-                    @endif
+                    @else
+                        <a href="{{ route('login') }}"
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 inline-block transition">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login to Create
+                        </a>
+                    @endauth
                 </div>
             @endforelse
         </div>
@@ -153,7 +170,10 @@
             });
         }
 
-        document.getElementById('searchInput').addEventListener('keyup', filterMeetings);
-        document.getElementById('statusFilter').addEventListener('change', filterMeetings);
+        // Initialize filter on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('searchInput').addEventListener('keyup', filterMeetings);
+            document.getElementById('statusFilter').addEventListener('change', filterMeetings);
+        });
     </script>
 @endpush

@@ -40,27 +40,21 @@ class MeetingController extends Controller
     }
 
     /**
-     * Show create meeting form
+     * Show create meeting form - Allow all authenticated users
      */
     public function create()
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only admins can create meetings.');
-        }
-
+        // All authenticated users can create meetings
         $teams = auth()->user()->teams;
         return view('meetings.create', compact('teams'));
     }
 
     /**
-     * Store new meeting
+     * Store new meeting - Allow all authenticated users
      */
     public function store(Request $request)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only admins can create meetings.');
-        }
-
+        // All authenticated users can create meetings
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -150,12 +144,13 @@ class MeetingController extends Controller
     }
 
     /**
-     * Show edit meeting form
+     * Show edit meeting form - ONLY CREATOR
      */
     public function edit(Meeting $meeting)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only admins can edit meetings.');
+        // ONLY the creator can edit
+        if ($meeting->created_by != auth()->id()) {
+            abort(403, 'Only the meeting creator can edit this meeting.');
         }
 
         if ($meeting->status == 'ended') {
@@ -167,12 +162,13 @@ class MeetingController extends Controller
     }
 
     /**
-     * Update meeting
+     * Update meeting - ONLY CREATOR
      */
     public function update(Request $request, Meeting $meeting)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only admins can update meetings.');
+        // ONLY the creator can update
+        if ($meeting->created_by != auth()->id()) {
+            abort(403, 'Only the meeting creator can update this meeting.');
         }
 
         if ($meeting->status == 'ended') {
@@ -201,12 +197,13 @@ class MeetingController extends Controller
     }
 
     /**
-     * Delete meeting
+     * Delete meeting - ONLY CREATOR
      */
     public function destroy(Meeting $meeting)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only admins can delete meetings.');
+        // ONLY the creator can delete
+        if ($meeting->created_by != auth()->id()) {
+            abort(403, 'Only the meeting creator can delete this meeting.');
         }
 
         DB::transaction(function () use ($meeting) {
@@ -220,31 +217,33 @@ class MeetingController extends Controller
     }
 
     /**
-     * Join a meeting
+     * Join a meeting - Allow anyone with access
      */
-
     public function join(Meeting $meeting)
     {
         $user = Auth::user();
 
-        // Check if user can join
-        $isAdmin = $user->role === 'admin';
-        $isCreator = $meeting->created_by === $user->id;
+        // Check if meeting is ended
+        if ($meeting->status === 'ended') {
+            return redirect()->route('meetings.index')->with('error', 'This meeting has already ended.');
+        }
+
+        // Check if user is already a participant
         $isParticipant = $meeting->participants()->where('user_id', $user->id)->exists();
 
-        if (!$isAdmin && !$isCreator && !$isParticipant) {
-            // Add as participant if not already - REMOVE 'role' from here
+        if (!$isParticipant) {
+            // Add as participant automatically
             $meeting->participants()->attach($user->id, [
                 'joined_at' => now(),
                 'is_speaker' => false,
                 'is_video_on' => false,
                 'is_audio_on' => false,
-                // Remove 'role' => 'participant' from here
             ]);
-        } elseif ($isParticipant) {
+        } else {
             // Update joined_at for existing participant
             $meeting->participants()->updateExistingPivot($user->id, [
                 'joined_at' => now(),
+                'left_at' => null,
             ]);
         }
 
@@ -268,6 +267,20 @@ class MeetingController extends Controller
         }
 
         if (auth()->check()) {
+            $user = auth()->user();
+
+            // Auto-add as participant if not already
+            $isParticipant = $meeting->participants()->where('user_id', $user->id)->exists();
+
+            if (!$isParticipant) {
+                $meeting->participants()->attach($user->id, [
+                    'joined_at' => now(),
+                    'is_speaker' => false,
+                    'is_video_on' => false,
+                    'is_audio_on' => false,
+                ]);
+            }
+
             return redirect()->route('meetings.join', $meeting);
         }
 
@@ -285,21 +298,18 @@ class MeetingController extends Controller
     }
 
     /**
-     * Video room view (UNIFIED - only ONE version!)
+     * Video room view - Auto-add participants
      */
     public function videoRoom(Meeting $meeting)
     {
         $user = auth()->user();
 
-        $canJoin = $meeting->created_by == $user->id ||
-            $user->role === 'admin' ||
-            $meeting->participants->contains($user->id);
-
-        if (!$canJoin) {
-            abort(403, 'You do not have access to this meeting.');
+        // Check if meeting is ended
+        if ($meeting->status === 'ended') {
+            return redirect()->route('meetings.index')->with('error', 'This meeting has already ended.');
         }
 
-        // Ensure user is added as participant
+        // Auto-add user as participant
         MeetingParticipant::updateOrCreate(
             [
                 'meeting_id' => $meeting->id,
@@ -314,6 +324,11 @@ class MeetingController extends Controller
             ]
         );
 
+        // Update meeting status to ongoing if scheduled
+        if ($meeting->status === 'scheduled') {
+            $meeting->update(['status' => 'ongoing']);
+        }
+
         $participants = MeetingParticipant::where('meeting_id', $meeting->id)
             ->whereNull('left_at')
             ->with('user')
@@ -327,7 +342,7 @@ class MeetingController extends Controller
      */
     public function startMeeting(Meeting $meeting)
     {
-        if ($meeting->created_by != auth()->id() && auth()->user()->role !== 'admin') {
+        if ($meeting->created_by != auth()->id()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -340,13 +355,13 @@ class MeetingController extends Controller
     }
 
     /**
-     * End meeting
+     * End meeting - ONLY CREATOR
      */
     public function end(Meeting $meeting)
     {
-        // Allow creator or admin to end meeting
-        if ($meeting->created_by != auth()->id() && auth()->user()->role !== 'admin') {
-            abort(403, 'Only the meeting creator or admin can end this meeting.');
+        // ONLY the creator can end meeting
+        if ($meeting->created_by != auth()->id()) {
+            abort(403, 'Only the meeting creator can end this meeting.');
         }
 
         $meeting->update([
@@ -355,7 +370,7 @@ class MeetingController extends Controller
         ]);
 
         return redirect()->route('meetings.show', $meeting)
-            ->with('success', 'Meeting ended successfully! You can now upload the recording for AI analysis.');
+            ->with('success', 'Meeting ended successfully!');
     }
 
     /**
@@ -433,11 +448,12 @@ class MeetingController extends Controller
     }
 
     /**
-     * Add participant to meeting
+     * Add participant to meeting - ONLY CREATOR
      */
     public function addParticipant(Request $request, Meeting $meeting)
     {
-        if ($meeting->created_by != auth()->id() && auth()->user()->role !== 'admin') {
+        // ONLY the creator can add participants
+        if ($meeting->created_by != auth()->id()) {
             abort(403, 'Only the meeting creator can add participants.');
         }
 
@@ -531,7 +547,7 @@ class MeetingController extends Controller
     public function saveRecording(Request $request)
     {
         $request->validate([
-            'recording' => 'required|file|mimes:webm,mp4|max:512000', // Max 500MB
+            'recording' => 'required|file|mimes:webm,mp4|max:512000',
             'meeting_id' => 'required|exists:meetings,id',
             'meeting_code' => 'required|string'
         ]);
@@ -543,16 +559,14 @@ class MeetingController extends Controller
         $filename = 'meeting-' . $meetingCode . '-' . now()->format('Y-m-d-H-i-s') . '.webm';
         $path = $file->storeAs('meeting-recordings/' . $meetingId, $filename, 'public');
 
-        // Optional: Save recording info to database
-        // Recording::create([
-        //     'meeting_id' => $meetingId,
-        //     'filename' => $filename,
-        //     'path' => $path,
-        //     'recorded_by' => auth()->id(),
-        //     'size' => $file->getSize(),
-        //     'duration' => $request->duration ?? null
-        // ]);
-
         return response()->json(['success' => true, 'path' => $path]);
+    }
+
+    /**
+     * Popup view for meeting
+     */
+    public function popup(Meeting $meeting)
+    {
+        return view('meetings.popup', compact('meeting'));
     }
 }

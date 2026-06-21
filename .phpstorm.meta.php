@@ -2645,7 +2645,7 @@ namespace PHPSTORM_META {
         registerArgumentsSet('views', 
 'admin.users.create','admin.users.edit','admin.users.index','admin.users.show','ai.insights',
 'analytics.dashboard','auth.forgot-password','auth.login','auth.register','auth.reset-password',
-'components.notification-bell','dashboard.index','layouts.app','meetings.create','meetings.dashboard',
+'notification.notification-bell','dashboard.index','layouts.app','meetings.create','meetings.dashboard',
 'meetings.edit','meetings.index','meetings.join','meetings.show','meetings.video-room',
 'profile.edit','profile.show','settings.index','tasks.create','tasks.edit',
 'tasks.index','tasks.partials.task-card','tasks.show','teams.create','teams.edit',

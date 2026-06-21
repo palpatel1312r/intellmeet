@@ -152,7 +152,7 @@
                     </button>
 
                     <!-- Notifications Bell Component -->
-                    @include('components.notification-bell')
+                    @include('notification.notification-bell')
 
                     <!-- User Dropdown -->
                     <div class="relative" x-data="{ userMenuOpen: false }">

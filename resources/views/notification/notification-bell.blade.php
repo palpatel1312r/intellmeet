@@ -1,4 +1,4 @@
-<!-- resources/views/components/notification-bell.blade.php -->
+
 @php
     use Illuminate\Support\Str;
 @endphp

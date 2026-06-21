@@ -33,7 +33,7 @@ class BulkNotification extends Notification
       'title' => $this->title,
       'message' => $this->message,
       'sender_name' => $this->sender->name,
-      'action_url' => route('components.index'),
+      'action_url' => route('notification.index'),
     ];
   }
 }

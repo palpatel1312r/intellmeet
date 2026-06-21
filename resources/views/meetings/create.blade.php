@@ -62,23 +62,6 @@
                     </select>
                 </div>
 
-                <!-- Notify Team Members Option (shown when team is selected) -->
-                {{-- <div id="notifyTeamContainer" class="mb-6 hidden">
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <label class="flex items-start cursor-pointer">
-                            <input type="checkbox" name="notify_team" value="1"
-                                class="mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <div class="ml-3">
-                                <span class="text-sm font-medium text-gray-800">Notify all team members</span>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    All team members will be automatically added as participants and will receive a
-                                    notification.
-                                </p>
-                            </div>
-                        </label>
-                    </div>
-                </div> --}}
-
                 <!-- Team Members Preview -->
                 <div id="teamMembersPreview" class="mb-6 hidden">
                     <div class="bg-gray-50 rounded-lg p-4">
@@ -119,7 +102,6 @@
     @push('scripts')
         <script>
             const teamSelect = document.getElementById('teamSelect');
-            const notifyContainer = document.getElementById('notifyTeamContainer');
             const teamPreview = document.getElementById('teamMembersPreview');
             const teamMembersList = document.getElementById('teamMembersList');
 
@@ -130,9 +112,6 @@
                 const teamId = this.value;
 
                 if (teamId) {
-                    // Show notify container
-                    notifyContainer.classList.remove('hidden');
-
                     // Find selected team and show members
                     const selectedTeam = teams.find(t => t.id == teamId);
                     if (selectedTeam && selectedTeam.members) {
@@ -143,7 +122,6 @@
                         fetchTeamMembers(teamId);
                     }
                 } else {
-                    notifyContainer.classList.add('hidden');
                     teamPreview.classList.add('hidden');
                 }
             });
