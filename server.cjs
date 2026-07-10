@@ -4,12 +4,29 @@ const socketIO = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
+
+// Use Railway's PORT environment variable
+const PORT = process.env.PORT || 3000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://127.0.0.1:8000";
+
 const io = socketIO(server, {
     cors: {
-        origin: "http://127.0.0.1:8000",
+        origin: CLIENT_URL,
         methods: ["GET", "POST"],
         credentials: true,
     },
+});
+
+// Health check for Railway
+app.get("/health", (req, res) => {
+    res.status(200).json({ 
+        status: "healthy", 
+        timestamp: new Date().toISOString() 
+    });
+});
+
+app.get("/", (req, res) => {
+    res.send("Intellmeet WebSocket Server is running!");
 });
 
 // Store meeting rooms
@@ -20,10 +37,7 @@ io.on("connection", (socket) => {
 
     socket.on("join-meeting", (data) => {
         const { meetingCode, userId, userName } = data;
-
-        console.log(
-            `📢 User ${userName} (${userId}) joining meeting: ${meetingCode}`,
-        );
+        console.log(`📢 User ${userName} (${userId}) joining meeting: ${meetingCode}`);
         socket.join(meetingCode);
 
         if (!meetings.has(meetingCode)) {
@@ -44,16 +58,11 @@ io.on("connection", (socket) => {
             .map((user) => ({ userId: user.userId, userName: user.userName }));
 
         if (existingUsers.length > 0) {
-            console.log(
-                `📋 Sending existing users to ${userName}:`,
-                existingUsers,
-            );
+            console.log(`📋 Sending existing users to ${userName}:`, existingUsers);
             socket.emit("existing-users", existingUsers);
         }
 
-        console.log(
-            `👥 Meeting ${meetingCode} now has ${meeting.size} participants`,
-        );
+        console.log(`👥 Meeting ${meetingCode} now has ${meeting.size} participants`);
     });
 
     socket.on("offer", (data) => {
@@ -64,9 +73,7 @@ io.on("connection", (socket) => {
 
     socket.on("answer", (data) => {
         const { to, from, answer, meetingCode } = data;
-        console.log(
-            `📤 Answer from ${from} to ${to} in meeting ${meetingCode}`,
-        );
+        console.log(`📤 Answer from ${from} to ${to} in meeting ${meetingCode}`);
         socket.to(meetingCode).emit("answer", { from, to, answer });
     });
 
@@ -76,11 +83,9 @@ io.on("connection", (socket) => {
         socket.to(meetingCode).emit("ice-candidate", { from, to, candidate });
     });
 
-    // Fixed chat-message handler - broadcasts to others only
     socket.on("chat-message", (data) => {
         const { meetingCode, message, userName } = data;
         console.log(`💬 Chat in ${meetingCode}: ${userName}: ${message}`);
-        // This sends to all clients EXCEPT the sender
         socket.to(meetingCode).emit("chat-message", { userName, message });
     });
 
@@ -98,9 +103,7 @@ io.on("connection", (socket) => {
             }
 
             if (disconnectedUser) {
-                console.log(
-                    `👋 User ${disconnectedUser.userName} left meeting ${meetingCode}`,
-                );
+                console.log(`👋 User ${disconnectedUser.userName} left meeting ${meetingCode}`);
                 io.to(meetingCode).emit("user-left", {
                     userId: disconnectedUser.userId,
                     userName: disconnectedUser.userName,
@@ -116,19 +119,8 @@ io.on("connection", (socket) => {
     });
 });
 
-// Use port 3001 (or try 3002 if 3001 is busy)
-const PORT = 3000;
-server
-    .listen(PORT, () => {
-        console.log(`🚀 Socket.io server running on port ${PORT}`);
-        console.log(`📡 WebSocket URL: ws://127.0.0.1:${PORT}`);
-    })
-    .on("error", (err) => {
-        if (err.code === "EADDRINUSE") {
-            console.log(
-                `❌ Port ${PORT} is already in use. Trying port 3002...`,
-            );
-            const PORT2 = 3002;
-            server.listen(PORT2);
-        }
-    });
+// Start server
+server.listen(PORT, () => {
+    console.log(`🚀 Socket.io server running on port ${PORT}`);
+    console.log(`📡 WebSocket URL: ws://localhost:${PORT}`);
+});
