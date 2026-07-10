@@ -1,6 +1,5 @@
 {
     "private": true,
-    "type": "module",
     "scripts": {
         "build": "vite build",
         "dev": "vite",
@@ -30,11 +29,5 @@
     "name": "intellmeet",
     "version": "1.0.0",
     "description": "Intellmeet WebSocket Server",
-    "main": "server.js",
-    "directories": {
-        "test": "tests"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC"
+    "main": "server.js"
 }
