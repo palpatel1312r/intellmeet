@@ -1,0 +1,8 @@
+[build]
+  publish = "public"
+  command = "echo 'Static landing page - no build step required'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
