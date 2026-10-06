@@ -1,5 +1,6 @@
 [build]
   publish = "public"
+  command = "echo 'Serving static landing page from public/'"
 
 [[redirects]]
   from = "/*"
